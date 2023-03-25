@@ -7,17 +7,16 @@
 
 using namespace std;
 
-#define IF_EXIT(a, b) if(a) { cout << b << endl;  Sleep(3000); return -1; }
-#define EXIT(a) cout << a << endl; return -1;
+#define EXIT(a) cout << a << endl; Sleep(3000); return -1;
 
 DWORD GetProcessIdByName(const wchar_t* name) {
-	PROCESSENTRY32 entry;
-	entry.dwSize = sizeof(PROCESSENTRY32);
+	PROCESSENTRY32W entry;
+	entry.dwSize = sizeof(PROCESSENTRY32W);
 
 	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
 
-	if (Process32First(snapshot, &entry) == TRUE) {
-		while (Process32Next(snapshot, &entry) == TRUE) {
+	if (Process32FirstW(snapshot, &entry) == TRUE) {
+		while (Process32NextW(snapshot, &entry) == TRUE) {
 			if (_wcsicmp(entry.szExeFile, name) == 0) {
 				CloseHandle(snapshot);
 				return entry.th32ProcessID;
@@ -26,7 +25,7 @@ DWORD GetProcessIdByName(const wchar_t* name) {
 	}
 
 	CloseHandle(snapshot);
-	return 0;
+	return NULL;
 }
 
 int main()
@@ -44,9 +43,18 @@ int main()
 		CloseHandle(hToken);
 	}
 
-	DWORD dwProc = GetProcessIdByName(L"Genshin Impact Cloud Game.exe");
-	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwProc);
-	IF_EXIT(!hProc, "Failed to open process.");
+	while (GetProcessIdByName(L"Genshin Impact Cloud Game.exe") == NULL) {
+		cout << "Program isn't running. Wait for 3 sec..."  << endl;
+		Sleep(3000);
+	}
+
+	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, 
+		GetProcessIdByName(L"Genshin Impact Cloud Game.exe"));
+	if (!hProc) {
+		cout << "Failed to open process." << endl;
+		Sleep(3000);
+		return -1;
+	}
 
 	filesystem::path currentDllPath = std::filesystem::current_path() / "Core.dll";
 	string dllpath = currentDllPath.string();
@@ -93,6 +101,6 @@ int main()
 
 	CloseHandle(hProc);
 
-	Sleep(5000);
+	Sleep(3000);
 	return 0;
 }

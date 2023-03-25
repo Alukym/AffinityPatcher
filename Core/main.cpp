@@ -1,7 +1,9 @@
 #include "main.h"
 
 #include <iostream>
+#include <string>
 #include <list>
+#include <random>
 #include <Windows.h>
 
 using namespace std;
@@ -41,10 +43,10 @@ void ToggleWindowDisplayAffinity(HWND hWnd)
 		ret = SetWindowDisplayAffinity(hWnd, WDA_EXCLUDEFROMCAPTURE);
 	}
 
-	//if (ret == TRUE)
-	//	cout << "SetWindowDisplayAffinity success!" << endl;
+	if (ret == FALSE && hWnd != GetConsoleWindow())
+		printf_s("SetWindowDisplayAffinity failed! Window handle: %p, GetLastError: %d.\n", hWnd, GetLastError());
 	//else
-	//	cout << "SetWindowDisplayAffinity failed! GetLastError: " << GetLastError() << endl;
+	//	cout << "SetWindowDisplayAffinity success!" << endl;
 }
 
 BOOL CALLBACK EnumWindowCallback(HWND hWnd, LPARAM lparam)
@@ -59,16 +61,47 @@ BOOL CALLBACK EnumWindowCallback(HWND hWnd, LPARAM lparam)
 	return TRUE;
 }
 
+string rand_str()
+{
+	random_device rd;
+	default_random_engine random(rd());
+
+	char tmp = { };
+	string buffer = { };
+	int len = random() % 100;
+
+	for (int i = 0; i < len; i++) {
+		switch (random() % 3)
+		{
+			case 0:
+				tmp = random() % 10 + '0';
+				break;
+			case 1:
+				tmp = random() % 26 + 'a';
+				break;
+			case 2:
+				tmp = random() % 26 + 'A';
+		}
+		buffer.push_back(tmp);
+	}
+
+	return buffer;
+}
+
 void Main()
 {
 	AllocConsole();
 	freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
 	freopen_s((FILE**)stderr, "CONOUT$", "w", stderr);
 	SetConsoleOutputCP(CP_UTF8);
-	
-	cout << "Hello World!" << endl;
 
-	while (true) {
+	ios::sync_with_stdio(false);
+	cout.tie(nullptr);
+	
+	cout << "Hello World! Launch timestamp: " << time(NULL) << endl;
+
+	while (true) 
+	{
 		if (m_windowHandles.empty())
 		{
 			EnumWindows(EnumWindowCallback, NULL);
@@ -80,5 +113,9 @@ void Main()
 				ToggleWindowDisplayAffinity(windowHandle);
 			}
 		}
+
+		SetConsoleTitleA(rand_str().c_str());
+		//cout << rand_str();
+		Sleep(1000);
 	}
 }

@@ -1,3 +1,3 @@
 #pragma once
 
-void Main();
+void MainThread();

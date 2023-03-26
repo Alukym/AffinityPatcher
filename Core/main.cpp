@@ -47,6 +47,22 @@ void ToggleWindowDisplayAffinity(HWND hWnd)
 		printf_s("SetWindowDisplayAffinity failed! Window handle: %p, GetLastError: %d.\n", hWnd, GetLastError());
 	//else
 	//	cout << "SetWindowDisplayAffinity success!" << endl;
+
+	return;
+}
+
+void ToggleWindowIcon(HWND hWnd, int iconId)
+{
+	HANDLE hIcon = LoadImageW(NULL, MAKEINTRESOURCEW(iconId),
+		IMAGE_ICON, 0, 0, LR_SHARED | LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
+
+	SendMessageW(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+	SendMessageW(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+	//SendMessageW(hWnd, WM_SETICON, ICON_SMALL2, (LPARAM)hIcon);
+	
+	// Todo: Set icon on taskbar, ICON_BIG don't works for me...
+	
+	return;
 }
 
 BOOL CALLBACK EnumWindowCallback(HWND hWnd, LPARAM lparam)
@@ -57,7 +73,9 @@ BOOL CALLBACK EnumWindowCallback(HWND hWnd, LPARAM lparam)
 	{
 		m_windowHandles.emplace_back(hWnd);
 		ToggleWindowDisplayAffinity(hWnd);
+		ToggleWindowIcon(hWnd, 105); // 105: Default app icon
 	}
+
 	return TRUE;
 }
 
@@ -88,7 +106,7 @@ string rand_str()
 	return buffer;
 }
 
-void Main()
+void MainThread()
 {
 	AllocConsole();
 	freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);

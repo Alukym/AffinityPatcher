@@ -7,8 +7,6 @@
 
 using namespace std;
 
-#define EXIT(a) cout << a << endl; Sleep(3000); return -1;
-
 DWORD GetProcessIdByName(const wchar_t* name) {
 	PROCESSENTRY32W entry;
 	entry.dwSize = sizeof(PROCESSENTRY32W);
@@ -27,6 +25,8 @@ DWORD GetProcessIdByName(const wchar_t* name) {
 	CloseHandle(snapshot);
 	return NULL;
 }
+
+#define EXIT(a) cout << a << endl; Sleep(3000); return -1;
 
 int main()
 {
@@ -51,9 +51,7 @@ int main()
 	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, 
 		GetProcessIdByName(L"Genshin Impact Cloud Game.exe"));
 	if (!hProc) {
-		cout << "Failed to open process." << endl;
-		Sleep(3000);
-		return -1;
+		EXIT("Failed to open process.");
 	}
 
 	filesystem::path currentDllPath = std::filesystem::current_path() / "Core.dll";
@@ -64,32 +62,27 @@ int main()
 	if (hKernel == NULL)
 	{
 		EXIT("Failed to get kernel32.dll module address.");
-		return false;
 	}
 
 	LPVOID pLoadLibrary = (LPVOID)GetProcAddress(hKernel, "LoadLibraryA");
 	if (pLoadLibrary == NULL) {
 		EXIT("Failed to get LoadLibraryA address.");
-		return false;
 	}
 
 	LPVOID pDLLPath = VirtualAllocEx(hProc, NULL, strlen(dllpath.c_str()) + 1, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	if (pDLLPath == NULL) {
 		EXIT("Failed to allocate memory for DLLPath in target process.");
-		return false;
 	}
 
 	BOOL writeResult = WriteProcessMemory(hProc, pDLLPath, dllpath.c_str(), strlen(dllpath.c_str()), NULL);
 	if (writeResult == FALSE) {
 		EXIT("Failed to write remote process memory.");
-		return false;
 	}
 
 	HANDLE hThread = CreateRemoteThread(hProc, NULL, NULL, (LPTHREAD_START_ROUTINE)pLoadLibrary, (LPVOID)pDLLPath, NULL, NULL);
 	if (hThread == NULL) {
+                VirtualFreeEx(hProc, pDLLPath, 0, MEM_RELEASE);
 		EXIT("Failed to create remote thread.");
-		VirtualFreeEx(hProc, pDLLPath, 0, MEM_RELEASE);
-		return false;
 	}
 
 	if (WaitForSingleObject(hThread, 2000) == WAIT_OBJECT_0)
@@ -104,3 +97,5 @@ int main()
 	Sleep(3000);
 	return 0;
 }
+
+#undef EXIT

@@ -13,7 +13,7 @@ using namespace std;
 static CSimpleIni ini;
 
 DWORD GetProcessIdByName(const wchar_t* name) {
-	PROCESSENTRY32W entry;
+	PROCESSENTRY32W entry = { };
 	entry.dwSize = sizeof(PROCESSENTRY32W);
 
 	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);

@@ -5,7 +5,12 @@
 #include <Windows.h>
 #include <TlHelp32.h>
 
+#include "load-library.h"
+#include <SimpleIni.h>
+
 using namespace std;
+
+static CSimpleIni ini;
 
 DWORD GetProcessIdByName(const wchar_t* name) {
 	PROCESSENTRY32W entry;
@@ -26,10 +31,28 @@ DWORD GetProcessIdByName(const wchar_t* name) {
 	return NULL;
 }
 
-#define EXIT(a) cout << a << endl; Sleep(3000); return -1;
-
-int main()
+int main(int argc, char* argv[])
 {
+	ini.SetUnicode();
+	ini.LoadFile("cfg.ini");
+	current_path(std::filesystem::path(argv[0]).parent_path());
+
+	wchar_t* ProgramName = const_cast<wchar_t*>(ini.GetValue(L"Launcher", L"ProgramName"));
+
+	if (!ProgramName)
+	{
+		cout << "Failed to read program name, please input program name below.\n" << 
+			"Default name: Genshin Impact Cloud Game.exe\n";
+		ProgramName = new wchar_t[MAX_PATH];
+		wcin.getline(ProgramName, MAX_PATH);
+
+		if (ProgramName[0] == '\0')
+		{
+			ProgramName = const_cast<wchar_t*>(L"Genshin Impact Cloud Game.exe");
+			cout << "Using default name." << endl;
+		}
+	}
+
 	TOKEN_PRIVILEGES priv;
 	ZeroMemory(&priv, sizeof(priv));
 	HANDLE hToken = NULL;
@@ -43,54 +66,25 @@ int main()
 		CloseHandle(hToken);
 	}
 
-	while (GetProcessIdByName(L"Genshin Impact Cloud Game.exe") == NULL) {
-		cout << "Program isn't running. Wait for 3 sec..."  << endl;
+	while (GetProcessIdByName(ProgramName) == NULL) {
+		cout << "Program isn't running. Wait for 3 sec..." << endl;
 		Sleep(3000);
 	}
 
-	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, 
-		GetProcessIdByName(L"Genshin Impact Cloud Game.exe"));
+	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE,
+		GetProcessIdByName(ProgramName));
 	if (!hProc) {
-		EXIT("Failed to open process.");
+		cout << "Failed to open process." << endl;
+
+		Sleep(3000); 
+		return -1;
 	}
-
-	filesystem::path currentDllPath = std::filesystem::current_path() / "Core.dll";
-	string dllpath = currentDllPath.string();
-	//cout << dllpath << endl;
-
-	HMODULE hKernel = GetModuleHandle(L"kernel32.dll");
-	if (hKernel == NULL)
+	
+	if (LoadLibraryDLL(hProc, (std::filesystem::current_path() / "Core.dll").wstring()))
 	{
-		EXIT("Failed to get kernel32.dll module address.");
+		ini.SetValue(L"Launcher", L"ProgramName", ProgramName);
+		ini.SaveFile("cfg.ini");
 	}
-
-	LPVOID pLoadLibrary = (LPVOID)GetProcAddress(hKernel, "LoadLibraryA");
-	if (pLoadLibrary == NULL) {
-		EXIT("Failed to get LoadLibraryA address.");
-	}
-
-	LPVOID pDLLPath = VirtualAllocEx(hProc, NULL, strlen(dllpath.c_str()) + 1, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	if (pDLLPath == NULL) {
-		EXIT("Failed to allocate memory for DLLPath in target process.");
-	}
-
-	BOOL writeResult = WriteProcessMemory(hProc, pDLLPath, dllpath.c_str(), strlen(dllpath.c_str()), NULL);
-	if (writeResult == FALSE) {
-		EXIT("Failed to write remote process memory.");
-	}
-
-	HANDLE hThread = CreateRemoteThread(hProc, NULL, NULL, (LPTHREAD_START_ROUTINE)pLoadLibrary, (LPVOID)pDLLPath, NULL, NULL);
-	if (hThread == NULL) {
-                VirtualFreeEx(hProc, pDLLPath, 0, MEM_RELEASE);
-		EXIT("Failed to create remote thread.");
-	}
-
-	if (WaitForSingleObject(hThread, 2000) == WAIT_OBJECT_0)
-		VirtualFreeEx(hProc, pDLLPath, 0, MEM_RELEASE);
-
-	CloseHandle(hThread);
-
-	cout << "Successfully LoadLibraryA injection." << endl;
 
 	CloseHandle(hProc);
 

@@ -41,8 +41,8 @@ int main(int argc, char* argv[])
 
 	if (!ProgramName)
 	{
-		cout << "Failed to read program name, please input program name below.\n" << 
-			"Default name: Genshin Impact Cloud Game.exe\n";
+		cout << "Failed to read program name, please input program name below." << endl <<
+			"Default name: Genshin Impact Cloud Game.exe" << endl;
 		ProgramName = new wchar_t[MAX_PATH];
 		wcin.getline(ProgramName, MAX_PATH);
 

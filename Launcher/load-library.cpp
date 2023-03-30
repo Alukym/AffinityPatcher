@@ -3,11 +3,7 @@
 
 #include "load-library.h"
 
-#if defined(DISABLE_OUTPUT)
-#define ILog(data, ...)
-#else
 #define ILog(text, ...) printf_s(text, __VA_ARGS__)
-#endif
 
 bool LoadLibraryDLL(HANDLE hProc, const std::wstring& dllpath)
 {

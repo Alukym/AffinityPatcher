@@ -6,7 +6,7 @@
 #include <TlHelp32.h>
 
 #include "load-library.h"
-#include <SimpleIni.h>
+#include <simpleini/SimpleIni.h>
 
 using namespace std;
 
@@ -33,9 +33,30 @@ DWORD GetProcessIdByName(const wchar_t* name) {
 
 int main(int argc, char* argv[])
 {
+	current_path(std::filesystem::path(argv[0]).parent_path());
+
+#if defined(CRAZY_INJECTION) && defined(_DEBUG)
+	PROCESSENTRY32W entry = { };
+	entry.dwSize = sizeof(PROCESSENTRY32W);
+
+	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
+
+	if (Process32FirstW(snapshot, &entry) == TRUE) {
+		while (Process32NextW(snapshot, &entry) == TRUE) {
+			HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, entry.th32ProcessID);
+			if (!hProc)
+				continue;
+
+			LoadLibraryDLL(hProc, (std::filesystem::current_path() / "Core.dll").wstring());
+		}
+	}
+
+	CloseHandle(snapshot);
+	return 0;
+#endif
+
 	ini.SetUnicode();
 	ini.LoadFile("cfg.ini");
-	current_path(std::filesystem::path(argv[0]).parent_path());
 
 	wchar_t* ProgramName = const_cast<wchar_t*>(ini.GetValue(L"Launcher", L"ProgramName"));
 

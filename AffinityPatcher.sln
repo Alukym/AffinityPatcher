@@ -9,12 +9,18 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Core", "Core\Core.vcxproj",
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug_CrazyInjection|x64 = Debug_CrazyInjection|x64
+		Debug_CrazyInjection|x86 = Debug_CrazyInjection|x86
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A2900BFD-3820-47A2-9578-95ADD5E2239D}.Debug_CrazyInjection|x64.ActiveCfg = Debug_CrazyInjection|x64
+		{A2900BFD-3820-47A2-9578-95ADD5E2239D}.Debug_CrazyInjection|x64.Build.0 = Debug_CrazyInjection|x64
+		{A2900BFD-3820-47A2-9578-95ADD5E2239D}.Debug_CrazyInjection|x86.ActiveCfg = Debug_CrazyInjection|Win32
+		{A2900BFD-3820-47A2-9578-95ADD5E2239D}.Debug_CrazyInjection|x86.Build.0 = Debug_CrazyInjection|Win32
 		{A2900BFD-3820-47A2-9578-95ADD5E2239D}.Debug|x64.ActiveCfg = Debug|x64
 		{A2900BFD-3820-47A2-9578-95ADD5E2239D}.Debug|x64.Build.0 = Debug|x64
 		{A2900BFD-3820-47A2-9578-95ADD5E2239D}.Debug|x86.ActiveCfg = Debug|Win32
@@ -23,6 +29,10 @@ Global
 		{A2900BFD-3820-47A2-9578-95ADD5E2239D}.Release|x64.Build.0 = Release|x64
 		{A2900BFD-3820-47A2-9578-95ADD5E2239D}.Release|x86.ActiveCfg = Release|Win32
 		{A2900BFD-3820-47A2-9578-95ADD5E2239D}.Release|x86.Build.0 = Release|Win32
+		{29BC7668-AE92-4570-8DE1-21CB1BD83D50}.Debug_CrazyInjection|x64.ActiveCfg = Debug_CrazyInjection|x64
+		{29BC7668-AE92-4570-8DE1-21CB1BD83D50}.Debug_CrazyInjection|x64.Build.0 = Debug_CrazyInjection|x64
+		{29BC7668-AE92-4570-8DE1-21CB1BD83D50}.Debug_CrazyInjection|x86.ActiveCfg = Debug_CrazyInjection|Win32
+		{29BC7668-AE92-4570-8DE1-21CB1BD83D50}.Debug_CrazyInjection|x86.Build.0 = Debug_CrazyInjection|Win32
 		{29BC7668-AE92-4570-8DE1-21CB1BD83D50}.Debug|x64.ActiveCfg = Debug|x64
 		{29BC7668-AE92-4570-8DE1-21CB1BD83D50}.Debug|x64.Build.0 = Debug|x64
 		{29BC7668-AE92-4570-8DE1-21CB1BD83D50}.Debug|x86.ActiveCfg = Debug|Win32

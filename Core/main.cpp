@@ -10,16 +10,17 @@ using namespace std;
 
 static std::list<HWND> m_windowHandles = {};
 
-using fnRtlGetVersion = NTSTATUS(NTAPI*)(PRTL_OSVERSIONINFOEXW lpVersionInformation);
 RTL_OSVERSIONINFOEXW GetSystemVersion()
 {
+	using fnRtlGetVersion = NTSTATUS(NTAPI*)(PRTL_OSVERSIONINFOEXW lpVersionInformation);
+
 	HMODULE hModule = GetModuleHandleW(L"ntdll.dll");
 	if (hModule)
 	{
 		fnRtlGetVersion functionPtr = (fnRtlGetVersion)GetProcAddress(hModule, "RtlGetVersion");
 		if (functionPtr != nullptr)
 		{
-			RTL_OSVERSIONINFOEXW osVersion = { 0 };
+			RTL_OSVERSIONINFOEXW osVersion = { };
 			osVersion.dwOSVersionInfoSize = sizeof(osVersion);
 			if (functionPtr(&osVersion) == 0)
 			{
@@ -27,12 +28,12 @@ RTL_OSVERSIONINFOEXW GetSystemVersion()
 			}
 		}
 	}
-	return { 0 };
+	return { };
 }
 
 void ToggleWindowDisplayAffinity(HWND hWnd)
 {
-	BOOL ret = { 0 };
+	BOOL ret = { };
 	static RTL_OSVERSIONINFOEXW pVersionInfo = GetSystemVersion();
 	if (pVersionInfo.dwBuildNumber < 19041)
 	{
@@ -51,9 +52,9 @@ void ToggleWindowDisplayAffinity(HWND hWnd)
 	return;
 }
 
-void ToggleWindowIcon(HWND hWnd, int iconId)
+void ToggleWindowIcon(HWND hWnd, LPWSTR iconRes)
 {
-	HANDLE hIcon = LoadImageW(NULL, MAKEINTRESOURCEW(iconId),
+	HANDLE hIcon = LoadImageW(NULL, iconRes,
 		IMAGE_ICON, 0, 0, LR_SHARED | LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
 
 	SendMessageW(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
@@ -73,7 +74,7 @@ BOOL CALLBACK EnumWindowCallback(HWND hWnd, LPARAM lparam)
 	{
 		m_windowHandles.emplace_back(hWnd);
 		ToggleWindowDisplayAffinity(hWnd);
-		ToggleWindowIcon(hWnd, 105); // 105: Default app icon
+		ToggleWindowIcon(hWnd, IDI_APPLICATION);
 	}
 
 	return TRUE;

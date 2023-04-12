@@ -1,4 +1,4 @@
-#include "main.h"
+﻿#include "main.h"
 
 #include <iostream>
 #include <string>
@@ -8,7 +8,7 @@
 
 using namespace std;
 
-static std::list<HWND> m_windowHandles = {};
+static std::list<HWND> m_windowHandles = { };
 
 RTL_OSVERSIONINFOEXW GetSystemVersion()
 {
@@ -31,6 +31,26 @@ RTL_OSVERSIONINFOEXW GetSystemVersion()
 	return { };
 }
 
+wstring GetLastErrorAsString(DWORD errorId = 0)
+{
+	DWORD errorMessageID = errorId == 0 ? ::GetLastError() : errorId;
+	if (errorMessageID == 0)
+	{
+		return wstring();
+	}
+
+	LPWSTR messageBuffer = nullptr;
+
+	size_t size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&messageBuffer, 0, NULL);
+
+	wstring message(messageBuffer, size);
+
+	LocalFree(messageBuffer);
+
+	return message;
+}
+
 void ToggleWindowDisplayAffinity(HWND hWnd)
 {
 	BOOL ret = { };
@@ -45,6 +65,7 @@ void ToggleWindowDisplayAffinity(HWND hWnd)
 	}
 
 	if (ret == FALSE && hWnd != GetConsoleWindow())
+		//wcout << "SetWindowDisplayAffinity failed! Window handle: " << hWnd << ". Error: " << GetLastErrorAsString();
 		printf_s("SetWindowDisplayAffinity failed! Window handle: %p, GetLastError: %d.\n", hWnd, GetLastError());
 	//else
 	//	cout << "SetWindowDisplayAffinity success!" << endl;
@@ -56,6 +77,13 @@ void ToggleWindowIcon(HWND hWnd, LPWSTR iconRes)
 {
 	HANDLE hIcon = LoadImageW(NULL, iconRes,
 		IMAGE_ICON, 0, 0, LR_SHARED | LR_DEFAULTCOLOR | LR_DEFAULTSIZE);
+
+	if (hIcon == NULL)
+	{
+		//wcout << "LoadImageW failed! Error: " << GetLastErrorAsString();
+		cout << "LoadImageW failed! Error: " << GetLastError() << endl;
+		return;
+	}
 
 	SendMessageW(hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
 	SendMessageW(hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
@@ -112,7 +140,7 @@ void MainThread()
 	AllocConsole();
 	freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
 	freopen_s((FILE**)stderr, "CONOUT$", "w", stderr);
-	SetConsoleOutputCP(CP_UTF8);
+	SetConsoleOutputCP(CP_UTF8); // idk why it doesn't works...
 
 	ios::sync_with_stdio(false);
 	cout.tie(nullptr);
@@ -130,11 +158,11 @@ void MainThread()
 			for (auto windowHandle : m_windowHandles)
 			{
 				ToggleWindowDisplayAffinity(windowHandle);
+				ToggleWindowIcon(windowHandle, IDI_APPLICATION);
 			}
 		}
 
 		SetConsoleTitleA(rand_str().c_str());
-		//cout << rand_str();
-		Sleep(1000);
+		Sleep(1500);
 	}
 }

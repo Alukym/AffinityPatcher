@@ -113,22 +113,28 @@ string rand_str()
 	random_device rd;
 	default_random_engine random(rd());
 
-	char tmp = { };
 	string buffer = { };
 	int len = random() % 100;
 
 	for (int i = 0; i < len; i++) {
+		char tmp = { };
+
 		switch (random() % 3)
 		{
-			case 0:
-				tmp = random() % 10 + '0';
-				break;
-			case 1:
-				tmp = random() % 26 + 'a';
-				break;
-			case 2:
-				tmp = random() % 26 + 'A';
+		case 0:
+			tmp = random() % 10 + '0';
+			break;
+		case 1:
+			tmp = random() % 26 + 'a';
+			break;
+		case 2:
+			tmp = random() % 26 + 'A';
+			break;
+		default:
+			i--;
+			continue;
 		}
+
 		buffer.push_back(tmp);
 	}
 

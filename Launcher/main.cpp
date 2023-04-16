@@ -2,6 +2,8 @@
 #include <filesystem>
 #include <string>
 #include <list>
+#include <random>
+#include <fstream>
 
 #include <Windows.h>
 #include <TlHelp32.h>
@@ -17,20 +19,51 @@ list<DWORD> GetProcessIdListByName(const wchar_t* name) {
 	PROCESSENTRY32W entry = { };
 	entry.dwSize = sizeof(PROCESSENTRY32W);
 
-	list<DWORD> _pidList = { };
+	list<DWORD> pidList_ = { };
 
 	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);
 
 	if (Process32FirstW(snapshot, &entry) == TRUE) {
 		while (Process32NextW(snapshot, &entry) == TRUE) {
 			if (_wcsicmp(entry.szExeFile, name) == 0) {
-				_pidList.push_back(entry.th32ProcessID);
+				pidList_.push_back(entry.th32ProcessID);
 			}
 		}
 	}
 
 	CloseHandle(snapshot);
-	return _pidList;
+	return pidList_;
+}
+
+wstring rand_dll_name(int len = 10)
+{
+	random_device rd;
+	default_random_engine random(rd());
+
+	wstring buffer = L"TempDll_";
+
+	while((buffer.length() - 8) <= len)
+	{
+		char tmp = { };
+
+		switch (random() % 3)
+		{
+		case 0:
+			tmp = random() % 10 + '0';
+			break;
+		case 1:
+			tmp = random() % 26 + 'a';
+			break;
+		case 2:
+			tmp = random() % 26 + 'A';
+			break;
+		}
+
+		buffer.push_back(tmp);
+	}
+
+	buffer.append(L".dll");
+	return buffer;
 }
 
 int main(int argc, char* argv[])
@@ -79,7 +112,8 @@ int main(int argc, char* argv[])
 	TOKEN_PRIVILEGES priv;
 	ZeroMemory(&priv, sizeof(priv));
 	HANDLE hToken = NULL;
-	if (OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken)) {
+	if (OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken)) 
+	{
 		priv.PrivilegeCount = 1;
 		priv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 
@@ -99,6 +133,18 @@ int main(int argc, char* argv[])
 	auto pidList = GetProcessIdListByName(ProgramName);
 	for (auto dwPid : pidList)
 	{
+		auto tempDllPath = filesystem::temp_directory_path() / rand_dll_name();
+		if (!CopyFileW(
+			(std::filesystem::current_path() / "Core.dll").c_str(),
+			tempDllPath.c_str(),
+			FALSE))
+		{
+			cout << "Failed to copy dll. GetLastError: " << GetLastError() << endl;
+			b_allSuccess = false;
+			Sleep(1000);
+			continue;
+		}
+
 		HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwPid);
 		if (!hProc) {
 			cout << "Failed to open process. Pid: " << dwPid << endl;
@@ -107,14 +153,20 @@ int main(int argc, char* argv[])
 			continue;
 		}
 
-		b_allSuccess = LoadLibraryDLL(hProc, (std::filesystem::current_path() / "Core.dll").wstring());
+		if (!LoadLibraryDLL(hProc, tempDllPath.wstring()))
+		{
+			b_allSuccess = false;
+			Sleep(1000);
+			// continue;
+		}
+
 		CloseHandle(hProc);
 	}
 	
 	if (b_allSuccess)
 	{
 		ini.SetValue(L"Launcher", L"ProgramName", ProgramName);
-		ini.SaveFile("cfg.ini");
+		ini.SaveFile(L"cfg.ini");
 	}
 
 	Sleep(3000);

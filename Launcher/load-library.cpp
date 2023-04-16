@@ -1,5 +1,6 @@
 #include <Windows.h>
 #include <iostream>
+#include <sys/stat.h>
 
 #include "load-library.h"
 
@@ -23,11 +24,29 @@ std::wstring GetLastErrorAsString(DWORD errorId = 0)
 	return message;
 }
 
+char* ws2s(const wchar_t* wStr)
+{
+	int iSize = WideCharToMultiByte(CP_ACP, 0, wStr, -1, NULL, 0, NULL, NULL);
+	char* cStr = (char*)malloc(iSize * sizeof(char));
+
+	WideCharToMultiByte(CP_ACP, 0, wStr, -1, cStr, iSize, NULL, NULL);
+	return cStr;
+}
+
 #define ILog(text, ...) printf_s(text, __VA_ARGS__)
 #define ILogErr(text, ...) printf_s(text, __VA_ARGS__); std::wcout << "Error: " << GetLastErrorAsString()
 
 bool LoadLibraryDLL(HANDLE hProc, const std::wstring& dllpath)
 {
+	struct stat buffer = { };
+	if (stat(ws2s(dllpath.c_str()), &buffer))
+	{
+		ILog("Dll file isn't exists.\n");
+		return false;
+	}
+
+	std::wcout << dllpath << std::endl;
+
 	HMODULE hKernel = GetModuleHandleW(L"kernel32.dll");
 	if (hKernel == NULL)
 	{
